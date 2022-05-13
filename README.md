@@ -1,8 +1,8 @@
 # CharCam
 
-[![Rust](https://github.com/jlopezcur/charcam/actions/workflows/rust.yml/badge.svg)](https://github.com/jlopezcur/charcam/actions/workflows/rust.yml)
-
 Capture the moment with chars...
+
+[![Rust](https://github.com/jlopezcur/charcam/actions/workflows/rust.yml/badge.svg)](https://github.com/jlopezcur/charcam/actions/workflows/rust.yml)
 
 ## References:
 
