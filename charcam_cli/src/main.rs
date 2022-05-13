@@ -4,19 +4,20 @@ use std::{io::Write, time::Duration};
 use termion::input::TermRead;
 use termion::raw::IntoRawMode;
 
-fn brightness(r: f32, g: f32, b: f32) -> f32 {
-    (0.299 * r + 0.587 * g + 0.114 * b) / 255.0
-}
-
-fn density_char(factor: &f32) -> char {
-    let density = "Ñ@#W$9876543210?!abc;:+=-,._ ";
-    let index = (factor * density.len() as f32).floor();
-    density.chars().nth(index as usize).unwrap()
-}
+use charcam::{brightness, density_char};
 
 struct Resolution {
     w: u32,
     h: u32,
+}
+
+struct Voxel {
+    r: u8,
+    g: u8,
+    b: u8,
+    #[allow(dead_code)]
+    bright: f32,
+    c: char,
 }
 
 fn main() {
@@ -41,6 +42,7 @@ fn main() {
     let ratio_height = (res.h as f32 / target_height as f32).ceil() as usize;
 
     let final_width = res.w as usize / ratio_width;
+    // let final_height = res.h as usize / ratio_height;
 
     write!(stdout, "{}", termion::clear::All).unwrap();
 
@@ -50,25 +52,32 @@ fn main() {
         termion::cursor::Goto(1, terminal_height)
     )
     .unwrap();
+    write!(stdout, "{}", termion::cursor::Hide).unwrap();
 
     for image in cam {
-        let bright_matrix = image.pixels().map(|pixel| {
-            let [r, g, b] = pixel.data;
-            1.0 - brightness(r as f32, g as f32, b as f32)
-        });
-        let mut matrix = vec![];
-        for (i, voxel) in bright_matrix.enumerate() {
-            // Coords on origin structure
-            let y = i / res.w as usize;
-            let x = i - (y * res.w as usize);
+        let matrix: Vec<Voxel> = image
+            .pixels()
+            .enumerate()
+            .filter_map(|(i, value)| {
+                // Coords on origin structure
+                let y = i / res.w as usize;
+                let x = i - (y * res.w as usize);
 
-            if x % ratio_width == 0 && y % ratio_height == 0 {
-                matrix.push(voxel);
-            }
-        }
+                if x % ratio_width == 0 && y % ratio_height == 0 {
+                    return Some(value);
+                }
+                None
+            })
+            .map(|pixel| {
+                let [r, g, b] = pixel.data;
+                let bright = brightness(r as f32, g as f32, b as f32);
+                let c = density_char(&bright);
+                Voxel { r, g, b, bright, c }
+            })
+            .collect();
 
-        write!(stdout, "{}", termion::cursor::Goto(1, 1)).unwrap();
-        for (i, voxel) in matrix.iter().enumerate() {
+        write!(stdout, "{}", termion::cursor::Goto(1, 1),).unwrap();
+        matrix.iter().enumerate().for_each(|(i, voxel)| {
             if i % final_width == 0 {
                 write!(
                     stdout,
@@ -77,13 +86,21 @@ fn main() {
                 )
                 .unwrap();
             }
-            write!(stdout, "{}", density_char(voxel)).unwrap();
-        }
+            write!(
+                stdout,
+                "{}{}",
+                termion::color::Fg(termion::color::Rgb(voxel.r, voxel.g, voxel.b)),
+                voxel.c
+            )
+            .unwrap();
+        });
+
         stdout.lock().flush().unwrap();
         let input = stdin.next();
         if let Some(Ok(key)) = input {
             match key {
                 termion::event::Key::Ctrl('c') => break,
+                termion::event::Key::Char('b') => break,
                 _ => {
                     // Do nothing
                 }
@@ -92,4 +109,12 @@ fn main() {
 
         std::thread::sleep(Duration::from_millis(1));
     }
+
+    write!(
+        stdout,
+        "{}{}",
+        termion::color::Fg(termion::color::White),
+        termion::cursor::Show
+    )
+    .unwrap();
 }
