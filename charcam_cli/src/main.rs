@@ -4,20 +4,11 @@ use std::{io::Write, time::Duration};
 use termion::input::TermRead;
 use termion::raw::IntoRawMode;
 
-use charcam::{brightness, density_char};
+use charcam::Voxel;
 
 struct Resolution {
     w: u32,
     h: u32,
-}
-
-struct Voxel {
-    r: u8,
-    g: u8,
-    b: u8,
-    #[allow(dead_code)]
-    bright: f32,
-    c: char,
 }
 
 fn main() {
@@ -38,10 +29,10 @@ fn main() {
     let target_width = terminal_width as usize;
     let target_height = terminal_height as usize;
 
-    let ratio_width = (res.w as f32 / target_width as f32).ceil() as usize;
-    let ratio_height = (res.h as f32 / target_height as f32).ceil() as usize;
+    let ratio_width = (res.w as f32 / target_width as f32).ceil();
+    let ratio_height = (res.h as f32 / target_height as f32).ceil();
 
-    let final_width = res.w as usize / ratio_width;
+    let final_width = (res.w as f32 / ratio_width).floor() as usize;
     // let final_height = res.h as usize / ratio_height;
 
     write!(stdout, "{}", termion::clear::All).unwrap();
@@ -63,17 +54,12 @@ fn main() {
                 let y = i / res.w as usize;
                 let x = i - (y * res.w as usize);
 
-                if x % ratio_width == 0 && y % ratio_height == 0 {
-                    return Some(value);
+                if x % ratio_width as usize == 0 && y % ratio_height as usize == 0 {
+                    return Some(value.data);
                 }
                 None
             })
-            .map(|pixel| {
-                let [r, g, b] = pixel.data;
-                let bright = brightness(r as f32, g as f32, b as f32);
-                let c = density_char(&bright);
-                Voxel { r, g, b, bright, c }
-            })
+            .map(|[r, g, b]| Voxel::new(r, g, b))
             .collect();
 
         write!(stdout, "{}", termion::cursor::Goto(1, 1),).unwrap();
@@ -100,7 +86,7 @@ fn main() {
         if let Some(Ok(key)) = input {
             match key {
                 termion::event::Key::Ctrl('c') => break,
-                termion::event::Key::Char('b') => break,
+                termion::event::Key::Char('q') => break,
                 _ => {
                     // Do nothing
                 }
