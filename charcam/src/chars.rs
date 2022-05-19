@@ -9,7 +9,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn it_works() {
+    fn check_density_char_cases() {
         assert_eq!(density_char(&0.0), ' ');
         assert_eq!(density_char(&0.5), '0');
         assert_eq!(density_char(&0.9), 'W');

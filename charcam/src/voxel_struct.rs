@@ -7,7 +7,7 @@ pub struct Voxel {
 
 impl Voxel {
     pub fn new(r: u8, g: u8, b: u8) -> Voxel {
-        let bright = super::brightness::brightness(r as f32, g as f32, b as f32);
+        let bright = super::brightness::brightness(r, g, b);
         let bright_char = super::chars::density_char(&bright);
         Voxel {
             r,
@@ -15,5 +15,33 @@ impl Voxel {
             b,
             c: bright_char,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn create_manual_voxel() {
+        let voxel = Voxel {
+            r: 0,
+            g: 255,
+            b: 0,
+            c: 't',
+        };
+        assert_eq!(voxel.r, 0);
+        assert_eq!(voxel.g, 255);
+        assert_eq!(voxel.b, 0);
+        assert_eq!(voxel.c, 't');
+    }
+
+    #[test]
+    fn create_voxel_with_new() {
+        let voxel = Voxel::new(0, 255, 0);
+        assert_eq!(voxel.r, 0);
+        assert_eq!(voxel.g, 255);
+        assert_eq!(voxel.b, 0);
+        assert_eq!(voxel.c, '2');
     }
 }
