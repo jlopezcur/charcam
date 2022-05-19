@@ -11,6 +11,29 @@ struct Resolution {
     h: u32,
 }
 
+fn voxel_printer(voxels: Vec<Voxel>, width: usize) {
+    let mut stdout = std::io::stdout().into_raw_mode().unwrap();
+    write!(stdout, "{}", termion::cursor::Goto(1, 1),).unwrap();
+    voxels.iter().enumerate().for_each(|(i, voxel)| {
+        if i % width == 0 {
+            write!(
+                stdout,
+                "{}",
+                termion::cursor::Goto(1, i as u16 / width as u16)
+            )
+            .unwrap();
+        }
+        write!(
+            stdout,
+            "{}{}",
+            termion::color::Fg(termion::color::Rgb(voxel.r, voxel.g, voxel.b)),
+            voxel.c
+        )
+        .unwrap();
+    });
+    stdout.lock().flush().unwrap();
+}
+
 fn main() {
     let mut stdout = std::io::stdout().into_raw_mode().unwrap();
     let mut stdin = termion::async_stdin().keys();
@@ -62,26 +85,8 @@ fn main() {
             .map(|[r, g, b]| Voxel::new(r, g, b))
             .collect();
 
-        write!(stdout, "{}", termion::cursor::Goto(1, 1),).unwrap();
-        matrix.iter().enumerate().for_each(|(i, voxel)| {
-            if i % final_width == 0 {
-                write!(
-                    stdout,
-                    "{}",
-                    termion::cursor::Goto(1, i as u16 / final_width as u16)
-                )
-                .unwrap();
-            }
-            write!(
-                stdout,
-                "{}{}",
-                termion::color::Fg(termion::color::Rgb(voxel.r, voxel.g, voxel.b)),
-                voxel.c
-            )
-            .unwrap();
-        });
+        voxel_printer(matrix, final_width);
 
-        stdout.lock().flush().unwrap();
         let input = stdin.next();
         if let Some(Ok(key)) = input {
             match key {
