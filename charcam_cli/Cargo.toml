@@ -5,7 +5,10 @@ edition = "2021"
 license = "MIT"
 
 [dependencies]
-camera_capture = "0.5.0"
 termion = "1.5.6"
-image = "0.24.2"
+image = "0.23.14"
 charcam = { path = "../charcam" }
+
+[dependencies.nokhwa]
+version = "0.9.4"
+features = ["input-v4l"]
